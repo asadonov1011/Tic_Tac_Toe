@@ -1,0 +1,489 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  #app {
+    min-height: 100vh;
+    background: #0f0f13;
+    color: #e8e8f0;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+  h1 { font-size: 28px; font-weight: 500; color: #a78bfa; letter-spacing: 2px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b6b80; margin-bottom: 24px; }
+  .setup-card {
+    background: #18181f;
+    border: 0.5px solid #2a2a38;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .field-label { font-size: 12px; color: #6b6b80; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  input[type=text], input[type=number] {
+    width: 100%;
+    background: #0f0f13;
+    border: 0.5px solid #2a2a38;
+    border-radius: 8px;
+    color: #e8e8f0;
+    padding: 10px 14px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type=text]:focus, input[type=number]:focus { border-color: #7c3aed; }
+  .mode-btns { display: flex; gap: 10px; }
+  .mode-btn {
+    flex: 1;
+    background: #0f0f13;
+    border: 0.5px solid #2a2a38;
+    border-radius: 8px;
+    color: #9999b0;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mode-btn.active { background: #2d1b69; border-color: #7c3aed; color: #a78bfa; }
+  .start-btn {
+    width: 100%;
+    background: #7c3aed;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    padding: 13px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .start-btn:hover { background: #6d28d9; }
+  .game-area { width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .status-bar {
+    background: #18181f;
+    border: 0.5px solid #2a2a38;
+    border-radius: 12px;
+    padding: 14px 24px;
+    text-align: center;
+    width: 100%;
+    font-size: 15px;
+    color: #c4c4d8;
+  }
+  .status-bar .turn-indicator { font-size: 20px; font-weight: 500; color: #a78bfa; }
+  .players-row { display: flex; gap: 12px; width: 100%; }
+  .player-card {
+    flex: 1;
+    background: #18181f;
+    border: 0.5px solid #2a2a38;
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .player-card.active { border-color: #7c3aed; background: #1a1130; }
+  .player-card .sym { font-size: 24px; margin-bottom: 4px; }
+  .player-card .name { font-size: 13px; color: #9999b0; }
+  .x-sym { color: #f87171; }
+  .o-sym { color: #60a5fa; }
+  .board-wrap { position: relative; }
+  .board {
+    display: grid;
+    gap: 6px;
+  }
+  .cell {
+    background: #18181f;
+    border: 0.5px solid #2a2a38;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+    font-weight: 500;
+    color: #e8e8f0;
+    user-select: none;
+  }
+  .cell:hover:not(.taken) { background: #222230; transform: scale(1.03); }
+  .cell.taken { cursor: default; }
+  .cell.win-cell { background: #2d1b69; border-color: #7c3aed; }
+  .cell .sym-x { color: #f87171; }
+  .cell .sym-o { color: #60a5fa; }
+  .bottom-row { display: flex; gap: 10px; width: 100%; }
+  .icon-btn {
+    flex: 1;
+    background: #18181f;
+    border: 0.5px solid #2a2a38;
+    border-radius: 10px;
+    color: #9999b0;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .icon-btn:hover { background: #222230; color: #e8e8f0; border-color: #3a3a50; }
+  canvas#fireworks {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .winner-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .winner-box {
+    background: #18181f;
+    border: 0.5px solid #7c3aed;
+    border-radius: 20px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+  }
+  .winner-box .trophy { font-size: 52px; margin-bottom: 12px; }
+  .winner-box h2 { font-size: 22px; font-weight: 500; color: #a78bfa; margin-bottom: 8px; }
+  .winner-box p { font-size: 14px; color: #6b6b80; margin-bottom: 24px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .modal-btn.primary { background: #7c3aed; border: none; color: #fff; }
+  .modal-btn.primary:hover { background: #6d28d9; }
+  .modal-btn.secondary { background: transparent; border: 0.5px solid #2a2a38; color: #9999b0; }
+  .modal-btn.secondary:hover { border-color: #7c3aed; color: #a78bfa; }
+  .error-msg { color: #f87171; font-size: 13px; text-align: center; }
+</style>
+
+<canvas id="fireworks"></canvas>
+
+<div id="app">
+  <h1>TIC-TAC-TOE</h1>
+  <p class="subtitle">Modern Edition</p>
+
+  <div class="setup-card" id="setupScreen">
+    <div>
+      <div class="field-label">Game mode</div>
+      <div class="mode-btns">
+        <div class="mode-btn active" id="btn2p" onclick="setMode('2p')">Two Players</div>
+        <div class="mode-btn" id="btnai" onclick="setMode('ai')">vs AI</div>
+      </div>
+    </div>
+    <div>
+      <div class="field-label">Player X name</div>
+      <input type="text" id="p1name" placeholder="Enter name..." value="Player X" />
+    </div>
+    <div id="p2nameWrap">
+      <div class="field-label">Player O name</div>
+      <input type="text" id="p2name" placeholder="Enter name..." value="Player O" />
+    </div>
+    <div>
+      <div class="field-label">Board size (3–10)</div>
+      <input type="number" id="boardSize" value="3" min="3" max="10" />
+    </div>
+    <div id="errMsg" class="error-msg" style="display:none"></div>
+    <button class="start-btn" onclick="startGame()">Start Game</button>
+  </div>
+
+  <div class="game-area" id="gameScreen" style="display:none">
+    <div class="players-row">
+      <div class="player-card" id="cardX">
+        <div class="sym x-sym">✕</div>
+        <div class="name" id="nameX">Player X</div>
+      </div>
+      <div class="player-card" id="cardO">
+        <div class="sym o-sym">○</div>
+        <div class="name" id="nameO">Player O</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="turn-indicator" id="turnText">Player X's turn</div>
+    </div>
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+    <div class="bottom-row">
+      <button class="icon-btn" onclick="resetGame()">Restart</button>
+      <button class="icon-btn" onclick="goSetup()">Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="winner-modal" id="winModal" style="display:none">
+  <div class="winner-box">
+    <div class="trophy" id="winTrophy">🏆</div>
+    <h2 id="winTitle">Player X wins!</h2>
+    <p id="winSub">Congratulations!</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="resetGame(); document.getElementById('winModal').style.display='none'">Play again</button>
+      <button class="modal-btn secondary" onclick="goSetup(); document.getElementById('winModal').style.display='none'">Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode = '2p';
+let size = 3;
+let board = [];
+let current = 'X';
+let gameActive = false;
+let names = { X: 'Player X', O: 'Player O' };
+let winLen = 3;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnai').classList.toggle('active', m === 'ai');
+  document.getElementById('p2nameWrap').style.display = m === '2p' ? '' : 'none';
+  if (m === 'ai') document.getElementById('p2name').value = 'AI';
+}
+
+function getWinLen(s) {
+  if (s <= 4) return 3;
+  if (s <= 6) return 4;
+  if (s <= 8) return 5;
+  return 5;
+}
+
+function startGame() {
+  const errEl = document.getElementById('errMsg');
+  const sz = parseInt(document.getElementById('boardSize').value);
+  if (isNaN(sz) || sz < 3 || sz > 10) {
+    errEl.style.display = '';
+    errEl.textContent = 'Board size must be between 3 and 10.';
+    return;
+  }
+  errEl.style.display = 'none';
+  size = sz;
+  winLen = getWinLen(size);
+  names.X = document.getElementById('p1name').value.trim() || 'Player X';
+  names.O = mode === 'ai' ? 'AI' : (document.getElementById('p2name').value.trim() || 'Player O');
+  document.getElementById('nameX').textContent = names.X;
+  document.getElementById('nameO').textContent = names.O;
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'flex';
+  initBoard();
+}
+
+function initBoard() {
+  board = Array(size * size).fill(null);
+  current = 'X';
+  gameActive = true;
+  updateStatus();
+  renderBoard();
+  updateCards();
+}
+
+function cellSize() {
+  const maxW = Math.min(window.innerWidth - 48, 520);
+  return Math.floor((maxW - 6 * (size - 1)) / size);
+}
+
+function renderBoard() {
+  const el = document.getElementById('board');
+  const cs = cellSize();
+  const fs = Math.max(14, Math.min(cs * 0.5, 48));
+  el.style.gridTemplateColumns = `repeat(${size}, ${cs}px)`;
+  el.innerHTML = '';
+  board.forEach((val, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (val ? ' taken' : '');
+    cell.style.width = cs + 'px';
+    cell.style.height = cs + 'px';
+    cell.style.fontSize = fs + 'px';
+    if (val === 'X') cell.innerHTML = '<span class="sym-x">✕</span>';
+    else if (val === 'O') cell.innerHTML = '<span class="sym-o">○</span>';
+    cell.addEventListener('click', () => makeMove(i));
+    el.appendChild(cell);
+  });
+}
+
+function makeMove(idx) {
+  if (!gameActive || board[idx]) return;
+  board[idx] = current;
+  const result = checkWin();
+  renderBoard();
+  if (result === 'win') {
+    highlightWin();
+    setTimeout(() => showWinner(names[current]), 300);
+    gameActive = false;
+    return;
+  }
+  if (result === 'draw') {
+    setTimeout(() => showDraw(), 300);
+    gameActive = false;
+    return;
+  }
+  current = current === 'X' ? 'O' : 'X';
+  updateStatus();
+  updateCards();
+  if (mode === 'ai' && current === 'O' && gameActive) {
+    setTimeout(aiMove, 350);
+  }
+}
+
+function aiMove() {
+  if (!gameActive) return;
+  const move = getBestMove();
+  if (move !== -1) makeMove(move);
+}
+
+function getBestMove() {
+  const empties = board.map((v, i) => v === null ? i : -1).filter(i => i !== -1);
+  if (!empties.length) return -1;
+
+  for (const i of empties) {
+    board[i] = 'O';
+    if (checkWin() === 'win') { board[i] = null; return i; }
+    board[i] = null;
+  }
+  for (const i of empties) {
+    board[i] = 'X';
+    if (checkWin() === 'win') { board[i] = null; return i; }
+    board[i] = null;
+  }
+  const center = Math.floor(size / 2) * size + Math.floor(size / 2);
+  if (board[center] === null) return center;
+  const corners = [0, size-1, size*(size-1), size*size-1];
+  for (const c of corners) if (board[c] === null) return c;
+  return empties[Math.floor(Math.random() * empties.length)];
+}
+
+let winningCells = [];
+function checkWin() {
+  winningCells = [];
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const v = board[r * size + c];
+      if (!v) continue;
+      for (const [dr, dc] of dirs) {
+        let cells = [[r, c]];
+        for (let k = 1; k < winLen; k++) {
+          const nr = r + dr * k, nc = c + dc * k;
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
+          if (board[nr * size + nc] === v) cells.push([nr, nc]);
+          else break;
+        }
+        if (cells.length >= winLen) { winningCells = cells; return 'win'; }
+      }
+    }
+  }
+  if (board.every(v => v !== null)) return 'draw';
+  return null;
+}
+
+function highlightWin() {
+  const cells = document.getElementById('board').children;
+  for (const [r, c] of winningCells) {
+    cells[r * size + c].classList.add('win-cell');
+  }
+}
+
+function updateStatus() {
+  document.getElementById('turnText').textContent = `${names[current]}'s turn (${current === 'X' ? '✕' : '○'})`;
+}
+
+function updateCards() {
+  document.getElementById('cardX').classList.toggle('active', current === 'X');
+  document.getElementById('cardO').classList.toggle('active', current === 'O');
+}
+
+function showWinner(name) {
+  document.getElementById('winTitle').textContent = `${name} wins!`;
+  document.getElementById('winSub').textContent = `Well played, ${name}!`;
+  document.getElementById('winTrophy').textContent = '🏆';
+  document.getElementById('winModal').style.display = 'flex';
+  startFireworks();
+}
+
+function showDraw() {
+  document.getElementById('winTitle').textContent = "It's a draw!";
+  document.getElementById('winSub').textContent = "No winner this time.";
+  document.getElementById('winTrophy').textContent = '🤝';
+  document.getElementById('winModal').style.display = 'flex';
+}
+
+function resetGame() {
+  stopFireworks();
+  initBoard();
+}
+
+function goSetup() {
+  stopFireworks();
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'flex';
+}
+
+let fwInterval = null;
+let particles = [];
+
+function startFireworks() {
+  const canvas = document.getElementById('fireworks');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  particles = [];
+
+  function burst() {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height * 0.6;
+    const colors = ['#f87171','#a78bfa','#60a5fa','#34d399','#fbbf24','#f472b6'];
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, alpha: 1, color: col, size: 2 + Math.random() * 3 });
+    }
+  }
+
+  fwInterval = setInterval(burst, 400);
+  burst(); burst();
+
+  function animate() {
+    if (!fwInterval) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.07;
+      p.alpha -= 0.012;
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    particles = particles.filter(p => p.alpha > 0);
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+function stopFireworks() {
+  clearInterval(fwInterval);
+  fwInterval = null;
+  const canvas = document.getElementById('fireworks');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles = [];
+}
+</script>
